@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Contract Details | Contract Tracking System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Contract Details</h2>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            Contract Information
+        </div>
+        <div class="card-body">
+            <h4 class="card-title">{{ contract.staff_name }}</h4>
+            <p class="card-text"><strong>Title:</strong> {{ contract.title }}</p>
+            <p class="card-text"><strong>Contract Type:</strong> {{ contract.contract_type }}</p>
+            <p class="card-text"><strong>Start Date:</strong> {{ contract.start_date }}</p>
+            <p class="card-text"><strong>End Date:</strong> {{ contract.end_date }}</p>
+            <p class="card-text"><strong>Supervisor:</strong> {{ contract.supervisor }}</p>
+            <p class="card-text"><strong>Status:</strong> 
+                {% if contract.is_expired %}
+                    <span class="badge badge-danger">Expired</span>
+                {% else %}
+                    <span class="badge badge-success">Active</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{% url 'contract_list' %}" class="btn btn-secondary">Back to List</a>
+        <a href="{% url 'contract_edit' contract.id %}" class="btn btn-warning">Edit</a>
+        <a href="{% url 'contract_delete' contract.id %}" class="btn btn-danger">Delete</a>
+    </div>
+</div>
+{% endblock %}
