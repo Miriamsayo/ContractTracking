@@ -9,30 +9,42 @@ from rest_framework.decorators import action
 from django.http import JsonResponse
 from django.utils.timezone import now
 import datetime
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from contracts.models import Contract, Unit
 from .serializers import ContractSerializer
 import logging
-from .forms import CustomUserCreationForm
-from .forms import ContractForm
-
+from .forms import CustomUserCreationForm, ContractForm
+from django.contrib.auth import logout
 
 logger = logging.getLogger(__name__)
 
+def dashboard(request):
+    return render(request, 'contracts/dashboard.html')
+
+def user_list(request):
+    User = get_user_model()
+    users = User.objects.all()
+    return render(request, 'contracts/user/user_list.html', {'users': users})
+
+def settings_view(request):
+    return render(request, 'contracts/settings.html')
 
 def contract_list(request):
     user = request.user
     
-    if user.role == "Admin":
-        contracts = Contract.objects.all()
-    elif user.role == "User":
-        contracts = Contract.objects.filter(unit=user.unit)
-    else:  # Supervisor sees all their subordinates' contracts
-        contracts = Contract.objects.filter(employee__supervisor=user)
-    
+    if hasattr(user, 'role'):
+        if user.role == "Admin":
+            contracts = Contract.objects.all()
+        elif user.role == "User":
+            contracts = Contract.objects.filter(unit=user.unit)
+        else:  # Supervisor sees all their subordinates' contracts
+            contracts = Contract.objects.filter(employee__supervisor=user)
+    else:        
+        contracts = Contract.objects.none()
     return render(request, 'contracts/contract_list.html', {'contracts': contracts})
 
-#  Edit contract (Fix: Ensure updating the existing contract)
+# Edit contract (Fix: Ensure updating the existing contract)
 def edit_contract(request, pk):
     contract = get_object_or_404(Contract, pk=pk)
     
@@ -50,16 +62,15 @@ def edit_contract(request, pk):
     return render(request, 'contracts/edit_contract.html', {'form': form})
 
 def add_contract(request):
-    if request.method =="POST":
+    if request.method == "POST":
         form = ContractForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect("contract_list")
-        else:
-            form = ContractForm()
-            
-        return render(request, "contract/add_contract.html", {"form": form})
+    else:
+        form = ContractForm()
 
+    return render(request, "contracts/add_contract.html", {"form": form})
 
 def contract_create(request):
     if request.method == 'POST':
@@ -68,6 +79,28 @@ def contract_create(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def update_contract(request, contract_id):
+    contract = get_object_or_404(Contract, id=contract_id)
+    if request.method == "POST":
+        form = ContractForm(request.POST, instance=contract)
+        if form.is_valid():
+            form.save()
+            return redirect("contract_list")
+    else:
+        form = ContractForm(instance=contract)
+    return render(request, "contracts/update_contract.html", {"form": form})
+
+def delete_contract(request, contract_id):
+    contract = get_object_or_404(Contract, id=contract_id)
+    if request.method == "POST":
+        contract.delete()
+        return redirect("contract_list")
+    return render(request, "contracts/contract_details.html", {"contract": contract, "delete_mode": True})
+
+def contract_detail(request, id):
+    contract = get_object_or_404(Contract, id=id)
+    return render(request, 'contracts/contract_detail.html', {'contract': contract})
 
 def send_notification_email(subject, message, recipient_list):
     try:
@@ -80,15 +113,11 @@ def send_notification_email(subject, message, recipient_list):
     except Exception as e:
         logger.error(f"Error sending email: {e}")
 
-#  Home view
-def home(request):
-    return render(request, 'contracts/home.html')
-
-#  Login view (Fix: Redirect instead of JSON response)
+# Login view (Fix: Redirect instead of JSON response)
 def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
-        password = request.POST.get('password1' '')
+        password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
@@ -96,8 +125,13 @@ def login_view(request):
             return redirect("dashboard")
         else:
             messages.error(request, "Invalid username or password.")
-    return render(request, "contracts/login.html") 
-#  Signup view
+    return render(request, "contracts/login.html")
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+# Signup view
 def signup(request):
     form = CustomUserCreationForm()
     
@@ -108,10 +142,11 @@ def signup(request):
             user = authenticate(request, username=user.username, password=request.POST['password1'])  # Authenticate the user
             if user is not None:
                 login(request, user)  # Log the user in
-                return redirect('home')  # Redirect to home or another page after successful signup
+                return redirect('dashboard')  # Redirect to home or another page after successful signup
 
     return render(request, 'signup.html', {'form': form})
-#  Contract API ViewSet
+
+# Contract API ViewSet
 class ContractViewSet(viewsets.ModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
@@ -119,7 +154,7 @@ class ContractViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def approve_by_supervisor(self, request, pk=None):
         contract = get_object_or_404(Contract, pk=pk)
-        if request.user != contract.employee.supervisor:
+        if request.employee != contract.supervisor:
             return Response({"error": "Only the supervisor can approve."}, status=status.HTTP_403_FORBIDDEN)
         
         contract.supervisor_approval = True

@@ -31,6 +31,12 @@
         <a href="{% url 'contract_list' %}" class="btn btn-secondary">Back to List</a>
         <a href="{% url 'contract_edit' contract.id %}" class="btn btn-warning">Edit</a>
         <a href="{% url 'contract_delete' contract.id %}" class="btn btn-danger">Delete</a>
+
+        form method="POST" action="{% url 'contract_delete' contract.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this contract?');">Delete</button>
+    </form>
+
     </div>
 </div>
 {% endblock %}

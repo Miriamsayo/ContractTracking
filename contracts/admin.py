@@ -7,11 +7,15 @@ from datetime import timedelta
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email', 'unit',  'role',)
+    list_display = ('id', 'username', 'email', 'unit',  'role', 'supervisor')
     list_filter = ('unit',)
     search_fields = ('username', 'email')
     
-
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "supervisor":
+            kwargs["queryset"] = CustomUser.objects.filter(role="Supervisor")
+            return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')

@@ -42,16 +42,26 @@
         <h4 class="text-center">Contract Tracker</h4>
         <hr>
         <a href="{% url 'dashboard' %}">🏠 Dashboard</a>
-        <a href="#">📑 Contracts</a>
-        <a href="#">👤 Users</a>
-        <a href="#">⚙️ Settings</a>
-        <a href="{% url 'login' %}">🚪 Logout</a>
+        <a href="{% url 'contract_list' %}">📑 Contracts</a>
+        <a href="{% url 'user_list' %}">Users</a>
+
+        <a href="{% url 'settings' %}">⚙️ Settings</a>
+        <a href="{% url 'logout' %}">🚪 Logout</a>
     </div>
 
     <!-- Main Content -->
     <div class="content">
         <h2>Dashboard</h2>
-        <p>Welcome, {{ user.username }}!</p>
+        <p>Welcome, {{ user.get_full_name|default:user.username }}!</p>
+
+        {% if user.is_supervisor %}
+            <p>You are a Supervisor overseeing:</p>
+            <ul>
+                {% for subordinate in user.subordinates.all %}
+                    <li>{{ subordinate.get_full_name|default:subordinate.username }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
 
         <div class="row">
             <!-- Active Contracts -->
@@ -59,7 +69,7 @@
                 <div class="card bg-primary text-white">
                     <div class="card-body">
                         <h5 class="card-title">Active Contracts</h5>
-                        <p class="card-text">15</p>
+                        <p class="card-text">{{ active_contracts_count }}</p>
                     </div>
                 </div>
             </div>
@@ -69,7 +79,7 @@
                 <div class="card bg-warning text-dark">
                     <div class="card-body">
                         <h5 class="card-title">Expiring Soon</h5>
-                        <p class="card-text">3</p>
+                        <p class="card-text">{{ expiring_contracts_count }}</p>
                     </div>
                 </div>
             </div>
@@ -79,7 +89,7 @@
                 <div class="card bg-danger text-white">
                     <div class="card-body">
                         <h5 class="card-title">Expired Contracts</h5>
-                        <p class="card-text">2</p>
+                        <p class="card-text">{{ expired_contracts_count }}</p>
                     </div>
                 </div>
             </div>
@@ -97,27 +107,17 @@
                 </tr>
             </thead>
             <tbody>
+                {% for contract in contracts %}
                 <tr>
-                    <td>John Doe</td>
-                    <td>Software Engineer</td>
-                    <td>Fixed-Term</td>
-                    <td>2025-05-12</td>
-                    <td class="text-success">Active</td>
+                    <td>{{ contract.staff_name }}</td>
+                    <td>{{ contract.title }}</td>
+                    <td>{{ contract.contract_type }}</td>
+                    <td>{{ contract.expiration_date }}</td>
+                    <td class="{% if contract.status == 'Active' %}text-success{% elif contract.status == 'Expiring Soon' %}text-warning{% else %}text-danger{% endif %}">
+                        {{ contract.status }}
+                    </td>
                 </tr>
-                <tr>
-                    <td>Jane Smith</td>
-                    <td>HR Manager</td>
-                    <td>Short-Term</td>
-                    <td>2025-03-15</td>
-                    <td class="text-warning">Expiring Soon</td>
-                </tr>
-                <tr>
-                    <td>Mike Brown</td>
-                    <td>Consultant</td>
-                    <td>Consultancy</td>
-                    <td>2025-02-20</td>
-                    <td class="text-danger">Expired</td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

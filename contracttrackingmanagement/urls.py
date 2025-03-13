@@ -19,11 +19,12 @@ from django.urls import path
 from contracts import views
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import path, include
+from django.urls import include
+from django.shortcuts import redirect
 from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from contracts.views import (
-    ContractViewSet, login_view, signup, home, add_contract, edit_contract, contract_list, contract_create
+    ContractViewSet, login_view, signup, dashboard, add_contract, edit_contract, contract_list, user_list, contract_create
 )
 
 router = DefaultRouter()
@@ -41,12 +42,17 @@ urlpatterns = [
     path('api/', include(router.urls)),  # Contract API routes
 
     # Frontend Routes for Contracts
-    path('', home, name="home"),  # Homepage
-    path('contracts/', contract_list, name='contract_list'),  # List contracts
-    path('contracts/add/', add_contract, name='add_contract'),  # Add new contract
-    path('contracts/edit/<int:pk>/', edit_contract, name='edit_contract'), 
-    path('create/',contract_create, name='contract_create'),
+    path('', views.dashboard, name='home'),
+    path('signup/', views.signup, name='signup'),
+    path('login/' ,views.login_view, name='login'),
+    path('dashboard/', views.dashboard, name="dashboard"), # Homepage
+    path('contracts/', views.contract_list, name='contract_list'),  # List contracts
+    path('users/', views.user_list, name='user_list'),
+    path('settings/', views.settings_view, name='settings'),
+    path('logout/', views.logout_view, name='logout'),
+    path('contracts/<int:id>/', views.contract_detail, name='contract_detail'),
 ]
+
 
 # Serve static and media files in development mode
 if settings.DEBUG:
