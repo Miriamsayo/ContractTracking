@@ -1,0 +1,39 @@
+"<h1>About Us</h1><p>This is the Contract Tracking Syste{% extends "base.html" %}
+
+    {% block title %}About Us{% endblock %}
+    
+    {% block content %}
+    <div class="container mt-5">
+        <h1 class="text-center">About the Contract Tracking System</h1>
+        <p class="lead text-center">
+            Welcome to the Contract Tracking System. This system helps HR and Procurement teams efficiently 
+            manage contracts, track expiration dates, and send timely renewal notifications.
+        </p>
+    
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3>Our Purpose</h3>
+                <p>
+                    Our goal is to automate contract management, ensure compliance, and reduce risks 
+                    associated with expired or unmanaged contracts.
+                </p>
+            </div>
+            <div class="col-md-6">
+                <h3>Key Features</h3>
+                <ul>
+                    <li>Automated contract tracking</li>
+                    <li>Multi-level approval workflows</li>
+                    <li>Timely expiration notifications</li>
+                    <li>Secure role-based authentication</li>
+                    <li>Audit logs for transparency</li>
+                </ul>
+            </div>
+        </div>
+    
+        <div class="text-center mt-5">
+            <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+        </div>
+    </div>
+    {% endblock %}
+    m.</p>" 
+

@@ -6,23 +6,40 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('contracts', '0002_alter_customuser_role'),
+        ("contracts", "0002_alter_customuser_role"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contract',
-            name='contract_type',
-            field=models.CharField(choices=[('Regular Contract', 'Regular Contract'), ('Short-term Contract', 'Short-term Contract'), ('Fixed-term Contract', 'Fixed-term Contract'), ('Consultancy', 'Consultancy')], default='Regular Contract', max_length=50),
+            model_name="contract",
+            name="contract_type",
+            field=models.CharField(
+                choices=[
+                    ("Regular Contract", "Regular Contract"),
+                    ("Short-term Contract", "Short-term Contract"),
+                    ("Fixed-term Contract", "Fixed-term Contract"),
+                    ("Consultancy", "Consultancy"),
+                ],
+                default="Regular Contract",
+                max_length=50,
+            ),
         ),
         migrations.AlterField(
-            model_name='contract',
-            name='status',
-            field=models.CharField(choices=[('Active', 'Active'), ('Expired', 'Expired'), ('Pending Renewal', 'Pending Renewal')], default='Active', max_length=20),
+            model_name="contract",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("Active", "Active"),
+                    ("Expired", "Expired"),
+                    ("Pending Renewal", "Pending Renewal"),
+                ],
+                default="Active",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='notification',
-            name='recipient_email',
+            model_name="notification",
+            name="recipient_email",
             field=models.EmailField(max_length=254),
         ),
     ]

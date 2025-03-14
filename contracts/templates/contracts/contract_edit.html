@@ -1,0 +1,25 @@
+<!-- contracts/templates/contracts/contract_edit.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Contract</title>
+</head>
+<body>
+    <h1>Edit Contract</h1>
+    <hr>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }} <!-- This will render all the form fields -->
+        <button type="submit">Save changes</button>
+    </form>
+
+    <hr>
+
+    <!-- You can also manually render individual contract fields if needed -->
+    <p><strong>Contract Name:</strong> {{ contract.contract_name }}</p>
+    <p><strong>Staff Name:</strong> {{ contract.staff_name }}</p>
+    <p><strong>Title:</strong> {{ contract.title }}</p>
+    <p><strong>Contract Type:</strong> {{ contract.contract_type }}</p>
+</body>
+</html>

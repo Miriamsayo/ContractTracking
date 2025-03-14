@@ -1,0 +1,22 @@
+ <!-- contracts/templates/contracts/contract_create.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Contract</title>
+</head>
+<body>
+    <h1>Create New Contract</h1>
+
+    <!-- The form to create a new contract -->
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}  <!-- This will render the form fields as paragraphs -->
+
+        <button type="submit">Create Contract</button>
+    </form>
+
+    <br>
+    <a href="{% url 'contract_list' %}">Back to Contract List</a>
+</body>
+</html>
+

@@ -6,10 +6,10 @@ from .models import Contract
 
 
 def send_contract_expiry_notification():
-    
+
     upcoming_expiry_date = now() + timedelta(days=30)
     expiring_contracts = Contract.objects.filter(expiry_date_lte=upcoming_expiry_date)
-    
+
     for contract in expiring_contracts:
         subject = "Contract Expiry Notification"
         message = (
@@ -25,4 +25,3 @@ def send_contract_expiry_notification():
             fail_silently=False,
         )
         return f"Sent {expiring_contracts.count()} notifications."
-    

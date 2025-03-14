@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path
 from contracts import views
@@ -24,33 +25,45 @@ from django.shortcuts import redirect
 from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from contracts.views import (
-    ContractViewSet, login_view, signup, dashboard, add_contract, edit_contract, contract_list, user_list, contract_create
+    ContractViewSet,
+    login_view,
+    signup,
+    dashboard,
+    add_contract,
+    contract_edit,
+    contract_list,
+    user_list,
+    contract_create,
+    delete_contract,
+    about_view,
+    
 )
 
 router = DefaultRouter()
-router.register(r'contracts', ContractViewSet)  # API routes for contract management
+router.register(r"contracts", ContractViewSet)  # API routes for contract management
 
 urlpatterns = [
     # Authentication & Admin Routes
-    path('signup/', signup, name='signup'),
-    path('login/', login_view, name="login"),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('admin/', admin.site.urls),
-
+    path("signup/", signup, name="signup"),
+    path("login/", login_view, name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("admin/", admin.site.urls),
     # API Routes
-    path('auth/', include('djoser.urls')),  # Djoser authentication routes
-    path('api/', include(router.urls)),  # Contract API routes
-
+    path("auth/", include("djoser.urls")),  # Djoser authentication routes
+    path("api/", include(router.urls)),  # Contract API routes
     # Frontend Routes for Contracts
-    path('', views.dashboard, name='home'),
-    path('signup/', views.signup, name='signup'),
-    path('login/' ,views.login_view, name='login'),
-    path('dashboard/', views.dashboard, name="dashboard"), # Homepage
-    path('contracts/', views.contract_list, name='contract_list'),  # List contracts
-    path('users/', views.user_list, name='user_list'),
-    path('settings/', views.settings_view, name='settings'),
-    path('logout/', views.logout_view, name='logout'),
-    path('contracts/<int:id>/', views.contract_detail, name='contract_detail'),
+    path("", views.dashboard, name="home"),
+    path("signup/", views.signup, name="signup"),
+    path("login/", views.login_view, name="login"),
+    path("dashboard/", views.dashboard, name="dashboard"),  # Homepage
+    path("contracts/", views.contract_list, name="contract_list"),  # List contracts
+    path("users/", views.user_list, name="user_list"),
+    path("logout/", views.logout_view, name="logout"),
+    path("contracts/<int:id>/", views.contract_detail, name="contract_detail"),
+    path('edit/<int:pk>/', contract_edit, name='contract_edit'),
+    path('contract/<int:pk>/delete/', delete_contract, name='contract_delete'),
+    path('contract/new/', views.contract_create, name='contract_create'),
+    path("about/", about_view, name="about"),
 ]
 
 
