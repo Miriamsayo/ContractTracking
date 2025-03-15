@@ -1,0 +1,10 @@
+{% extends "contracts/base.html" %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h2 class="text-danger">Access Denied</h2>
+    <p class="lead">You do not have permission to access this page.</p>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">Go Back to Dashboard</a>
+</div>
+{% endblock %}
+

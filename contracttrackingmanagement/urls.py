@@ -16,56 +16,55 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
-from contracts import views
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import include
-from django.shortcuts import redirect
-from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from contracts.views import (
     ContractViewSet,
     login_view,
     signup,
     dashboard,
-    add_contract,
     contract_edit,
     contract_list,
     user_list,
     contract_create,
     delete_contract,
     about_view,
-    
+    contract_detail,
+    logout_view,
 )
 
+# API Router for contract management
 router = DefaultRouter()
-router.register(r"contracts", ContractViewSet)  # API routes for contract management
+router.register(r"contracts", ContractViewSet)
 
 urlpatterns = [
-    # Authentication & Admin Routes
+    # Admin & Authentication Routes
+    path("admin/", admin.site.urls),
     path("signup/", signup, name="signup"),
     path("login/", login_view, name="login"),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-    path("admin/", admin.site.urls),
+    path("logout/", logout_view, name="logout"),
+
     # API Routes
-    path("auth/", include("djoser.urls")),  # Djoser authentication routes
+    path("api/auth/", include("djoser.urls")),  # Djoser authentication routes
     path("api/", include(router.urls)),  # Contract API routes
-    # Frontend Routes for Contracts
-    path("", views.dashboard, name="home"),
-    path("signup/", views.signup, name="signup"),
-    path("login/", views.login_view, name="login"),
-    path("dashboard/", views.dashboard, name="dashboard"),  # Homepage
-    path("contracts/", views.contract_list, name="contract_list"),  # List contracts
-    path("users/", views.user_list, name="user_list"),
-    path("logout/", views.logout_view, name="logout"),
-    path("contracts/<int:id>/", views.contract_detail, name="contract_detail"),
-    path('edit/<int:pk>/', contract_edit, name='contract_edit'),
-    path('contract/<int:pk>/delete/', delete_contract, name='contract_delete'),
-    path('contract/new/', views.contract_create, name='contract_create'),
+
+    # Frontend Views
+    path("", dashboard, name="home"),  # Homepage
+    path("dashboard/", dashboard, name="dashboard"),
+    path("contracts/", contract_list, name="contract_list"),  # List contracts
+    path("users/", user_list, name="user_list"),
+    
+    # Contract Management
+    path("contracts/<int:pk>/", contract_detail, name="contract_detail"),  # View contract details
+    path("contracts/<int:pk>/edit/", contract_edit, name="contract_edit"),  # Edit contract
+    path("contracts/<int:pk>/delete/", delete_contract, name="contract_delete"),  # Delete contract
+    path("contracts/new/", contract_create, name="contract_create"),  # Create contract
+
+    # About Page
     path("about/", about_view, name="about"),
 ]
-
 
 # Serve static and media files in development mode
 if settings.DEBUG:
