@@ -43,7 +43,7 @@
         <hr>
         <a href="{% url 'dashboard' %}">🏠 Dashboard</a>
         <a href="{% url 'contract_list' %}">📑 Contracts</a>
-        <a href="{% url 'user_list' %}">Users</a>
+        <a href="{% url 'user_list' %}">👥 Users</a>
         <a href="{% url 'logout' %}">🚪 Logout</a>
     </div>
 
@@ -57,39 +57,48 @@
             <ul>
                 {% for subordinate in user.subordinates.all %}
                     <li>{{ subordinate.get_full_name|default:subordinate.username }}</li>
+                {% empty %}
+                    <li>No subordinates assigned.</li>
                 {% endfor %}
             </ul>
+            <a href="{% url 'send_notifications' %}" class="btn btn-info btn-sm">📢 Send Notifications</a>
         {% endif %}
 
         <div class="row">
             <!-- Active Contracts -->
             <div class="col-md-4">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Active Contracts</h5>
-                        <p class="card-text">{{ active_contracts_count }}</p>
+                <a href="{% url 'contract_list' %}?status=active" class="text-decoration-none">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Active Contracts</h5>
+                            <p class="card-text">{{ active_contracts_count }}</p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Expiring Soon -->
             <div class="col-md-4">
-                <div class="card bg-warning text-dark">
-                    <div class="card-body">
-                        <h5 class="card-title">Expiring Soon</h5>
-                        <p class="card-text">{{ expiring_contracts_count }}</p>
+                <a href="{% url 'contract_list' %}?status=expiring" class="text-decoration-none">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <h5 class="card-title">Expiring Soon</h5>
+                            <p class="card-text">{{ expiring_contracts_count }}</p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Expired Contracts -->
             <div class="col-md-4">
-                <div class="card bg-danger text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Expired Contracts</h5>
-                        <p class="card-text">{{ expired_contracts_count }}</p>
+                <a href="{% url 'contract_list' %}?status=expired" class="text-decoration-none">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Expired Contracts</h5>
+                            <p class="card-text">{{ expired_contracts_count }}</p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
 
@@ -102,6 +111,7 @@
                     <th>Contract Type</th>
                     <th>Expiration Date</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -109,11 +119,18 @@
                 <tr>
                     <td>{{ contract.staff_name }}</td>
                     <td>{{ contract.title }}</td>
-                    <td>{{ contract.contract_type }}</td>
+                    <td>{{ contract.get_contract_type_display }}</td>
                     <td>{{ contract.expiration_date }}</td>
                     <td class="{% if contract.status == 'Active' %}text-success{% elif contract.status == 'Expiring Soon' %}text-warning{% else %}text-danger{% endif %}">
                         {{ contract.status }}
                     </td>
+                    <td>
+                        <a href="{% url 'contract_detail' contract.id %}" class="btn btn-sm btn-info">🔍 View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No recent contracts available.</td>
                 </tr>
                 {% endfor %}
             </tbody>

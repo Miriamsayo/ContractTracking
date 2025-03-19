@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.utils.timezone import now
 from django.core.mail import send_mail
-from django.core.exceptions import PermissionDenied
 
 
 class UserRoles(models.TextChoices):
@@ -11,6 +10,7 @@ class UserRoles(models.TextChoices):
     DEVELOPER = "Developer", "Developer"
     USER = "User", "User"
     SUPERVISOR = "Supervisor", "Supervisor"
+
 
 class CustomUser(AbstractUser):
     role = models.CharField(
@@ -48,6 +48,7 @@ class Unit(models.Model):
     def __str__(self):
         return self.name
 
+
 class ContractType(models.TextChoices):
     REGULAR = "Regular Contract", "Regular Contract"
     SHORT_TERM = "Short-term Contract", "Short-term Contract"
@@ -62,15 +63,6 @@ class Contract(models.Model):
     contract_type = models.CharField(
         max_length=50, choices=ContractType.choices, default=ContractType.REGULAR
     )
-    
-    def can_edit(self,user):
-        """Only Admin and Supervisor can edit the contract"""
-        return user.role in["Admin", "Supervisor"]
-    
-    def can_delete(self, user):
-        """Only Admin and Supervisor can delete the contract"""
-        return user.role in ["Admin", "Supervisor"]
-    
     description = models.TextField()
     start_date = models.DateField()
     end_date = models.DateField()
@@ -104,15 +96,27 @@ class Contract(models.Model):
         max_length=255, blank=True
     )
 
+    def  get_status(self):
+        today = now().date()
+        
+        if self.end_date < today:
+            return "Expired"
+        elif (self.end_date - today).days <= 30:
+            return "Pending Renewal"
+        return "Active"
+    def can_edit(self, user):
+        """Only Admin, Supervisor, or the contract's supervisor can edit."""
+        return user.is_superuser or user.role in ["Admin", "Supervisor"] or user == self.supervisor
+    
     def save(self, *args, **kwargs):
-        """Auto-generate contract_name before saving."""
-        if not self.contract_name:
-            self.contract_name = f"{self.staff_name} - {self.title} - {self.contract_type}"
+        """Auto-update contract_name and status before saving."""
+        self.status = self.get_status()  
+        self.contract_name = f"{self.staff_name} - {self.title} ({self.contract_type})"
         super().save(*args, **kwargs)
 
-    def can_edit(self, user):
-        """Checks if a user can edit the contract."""
-        return user.is_superuser or user == self.supervisor
+    def can_delete(self, user):
+        """Only Admin or Supervisor can delete the contract."""
+        return user.is_superuser or user.role in ["Admin", "Supervisor"]
 
     def __str__(self):
         return f"{self.staff_name} - {self.title} ({self.contract_type})"
@@ -120,8 +124,8 @@ class Contract(models.Model):
 
 class Notification(models.Model):
     recipient = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name="notifications",
         null=True,
         blank=True,
@@ -130,13 +134,13 @@ class Notification(models.Model):
         Contract, on_delete=models.CASCADE, related_name="notifications"
     )
     message = models.TextField()
-    sent_at  = models.DateTimeField(default=now)
+    sent_at = models.DateTimeField(default=now)
     recipient_email = models.EmailField()
     created_at = models.DateTimeField(default=now)
 
     def send_email_notification(self):
         """Send an email notification to the recipient."""
-        if self.recipient.email:
+        if self.recipient and self.recipient.email:
             send_mail(
                 subject="Contract Notification",
                 message=self.message,
@@ -151,5 +155,4 @@ class Notification(models.Model):
         self.send_email_notification()
 
     def __str__(self):
-        return f"Notification for {self.recipient.username} - {self.contract}"
-
+        return f"Notification for {self.recipient.username if self.recipient else 'Unknown'} - {self.contract}"

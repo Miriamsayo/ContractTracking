@@ -17,9 +17,7 @@ from .serializers import ContractSerializer
 from .forms import CustomUserCreationForm, ContractForm
 
 logger = logging.getLogger(__name__)
-
 User = get_user_model()
-
 
 @login_required
 def dashboard(request):
@@ -33,9 +31,10 @@ def user_list(request):
 
 
 @login_required
-def contract_list(request):
-    """Display contracts based on user role"""
+def contract_list(request, status=None):
+    """Display contracts based on user role and filter status"""
     user = request.user
+    today = now().date()
 
     if user.role == "Admin":
         contracts = Contract.objects.all()
@@ -46,7 +45,15 @@ def contract_list(request):
     else:
         contracts = Contract.objects.none()
 
-    return render(request, "contracts/contract_list.html", {"contracts": contracts})
+    # Apply filtering based on status
+    if status == "active":
+        contracts = contracts.filter(expiration_date__gt=today)
+    elif status == "expiring":
+        contracts = contracts.filter(expiration_date__range=[today, today + datetime.timedelta(days=30)])
+    elif status == "expired":
+        contracts = contracts.filter(expiration_date__lt=today)
+
+    return render(request, "contracts/contract_list.html", {"contracts": contracts, "status": status})
 
 
 @login_required
@@ -54,7 +61,7 @@ def contract_edit(request, pk):
     """Allow only Admins and Supervisors to edit contracts"""
     contract = get_object_or_404(Contract, pk=pk)
 
-    if request.user.role not in["Admin", "Supervisor"]:
+    if request.user.role not in ["Admin", "Supervisor"]:
         raise PermissionDenied
 
     if request.method == "POST":
@@ -78,14 +85,19 @@ def contract_create(request):
         form = ContractForm(request.POST, request.FILES)
         if form.is_valid():
             contract = form.save(commit=False)
-            contract.name = f"{contract.employee.name}, {contract.employee.title}, {contract.contract_type}"
+            
+            if not contract.staff_name:
+                messages.error(request, "You must select a staff name before creating a contract.")
+                return render(request, "contracts/contract_form.html", {"form": form})
+
+            contract.name = f"{contract.staff_name}, {contract.title}, {contract.contract_type}"
             contract.save()
             messages.success(request, "Contract created successfully.")
             return redirect("contract_list")
         else:
             messages.error(request, "Error creating contract.")
     else:
-        form = ContractForm()
+        form = ContractForm()  
 
     return render(request, "contracts/contract_form.html", {"form": form})
 
@@ -102,13 +114,14 @@ def delete_contract(request, pk):
     """Allow only Admins and Supervisors to delete contracts"""
     contract = get_object_or_404(Contract, pk=pk)
     
-    if request.user.role not in["Admin", "Supervisor"]:
+    if request.user.role not in ["Admin", "Supervisor"]:
         raise PermissionDenied
     
     if request.method == "POST":
         contract.delete()
         messages.success(request, "Contract deleted successfully.")
         return redirect("contract_list")
+    
     return render(request, "contracts/contract_confirm_delete.html", {"contract": contract})
 
 
@@ -178,7 +191,6 @@ class ContractViewSet(viewsets.ModelViewSet):
             f"Contract {contract.id} has been approved by Supervisor {request.user}.",
             [contract.employee.email]
         )
-        messages.success(request, f"Contract {contract.id} approved by Supervisor.")
 
         return Response({"message": "Contract approved by Supervisor"}, status=status.HTTP_200_OK)
 
@@ -202,7 +214,6 @@ class ContractViewSet(viewsets.ModelViewSet):
             f"Contract {contract.id} has been fully approved by HR {request.user}.",
             [contract.employee.email, contract.supervisor.email]
         )
-        messages.success(request, f"Contract {contract.id} fully approved by HR.")
 
         return Response({"message": "Contract fully approved by HR"}, status=status.HTTP_200_OK)
 
@@ -211,26 +222,21 @@ class ContractViewSet(viewsets.ModelViewSet):
         """Send notifications for contracts expiring in 2 months, 1 month, or 1 day"""
         today = now().date()
         expiring_contracts = Contract.objects.filter(
-            end_date__in=[
+            expiration_date__in=[
                 today + datetime.timedelta(days=60),
                 today + datetime.timedelta(days=30),
                 today + datetime.timedelta(days=1),
             ]
         )
 
-        if not expiring_contracts.exists():
-            return Response({"message": "No upcoming contract expiration."}, status=status.HTTP_200_OK)
-
         for contract in expiring_contracts:
-            days_remaining = (contract.end_date - today).days
+            days_remaining = (contract.expiration_date - today).days
 
             send_notification_email(
                 "Contract Expiration Reminder",
                 f"Reminder: Contract {contract.id} is expiring in {days_remaining} days.",
                 [contract.employee.email, contract.supervisor.email]
             )
-
-            logger.info(f"Expiration reminder sent for Contract {contract.id}")
 
         return Response({"message": "Expiration notifications sent."}, status=status.HTTP_200_OK)
 

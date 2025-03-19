@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "djoser",
     # Utilities
     "django_extensions",
-    "corsheaders",  # Enables frontend API requests
+    "corsheaders", # Enables frontend API requests
 ]
 
 # Middleware
@@ -146,6 +146,8 @@ CORS_ALLOWED_ORIGINS = config(
     default="http://localhost:3000,http://127.0.0.1:3000",
     cast=Csv(),
 )
+
+
 
 # Default Auto Field
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
