@@ -65,45 +65,19 @@
         {% endif %}
 
         <div class="row">
-            <!-- Active Contracts -->
             <div class="col-md-4">
-                <a href="{% url 'contract_list' %}?status=active" class="text-decoration-none">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Active Contracts</h5>
-                            <p class="card-text">{{ active_contracts_count }}</p>
-                        </div>
-                    </div>
-                </a>
+                <button id="active-btn" class="btn btn-primary">Active Contracts</button>
             </div>
-
-            <!-- Expiring Soon -->
             <div class="col-md-4">
-                <a href="{% url 'contract_list' %}?status=expiring" class="text-decoration-none">
-                    <div class="card bg-warning text-dark">
-                        <div class="card-body">
-                            <h5 class="card-title">Expiring Soon</h5>
-                            <p class="card-text">{{ expiring_contracts_count }}</p>
-                        </div>
-                    </div>
-                </a>
+                <button id="expiring-btn" class="btn btn-warning">Expiring Soon</button>
             </div>
-
-            <!-- Expired Contracts -->
             <div class="col-md-4">
-                <a href="{% url 'contract_list' %}?status=expired" class="text-decoration-none">
-                    <div class="card bg-danger text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Expired Contracts</h5>
-                            <p class="card-text">{{ expired_contracts_count }}</p>
-                        </div>
-                    </div>
-                </a>
+                <button id="expired-btn" class="btn btn-danger">Expired Contracts</button>
             </div>
         </div>
-
-        <h4>Recent Contracts</h4>
-        <table class="table table-striped">
+        
+        <!-- Contract Table -->
+        <table class="table mt-3">
             <thead>
                 <tr>
                     <th>Staff Name</th>
@@ -111,33 +85,55 @@
                     <th>Contract Type</th>
                     <th>Expiration Date</th>
                     <th>Status</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for contract in contracts %}
-                <tr>
+            <tbody id="contract-table-body">
+                {% for contract in active_contracts %}
+                <tr class="contract-row active">
                     <td>{{ contract.staff_name }}</td>
                     <td>{{ contract.title }}</td>
-                    <td>{{ contract.get_contract_type_display }}</td>
+                    <td>{{ contract.contract_type }}</td>
                     <td>{{ contract.expiration_date }}</td>
-                    <td class="{% if contract.status == 'Active' %}text-success{% elif contract.status == 'Expiring Soon' %}text-warning{% else %}text-danger{% endif %}">
-                        {{ contract.status }}
-                    </td>
-                    <td>
-                        <a href="{% url 'contract_detail' contract.id %}" class="btn btn-sm btn-info">🔍 View</a>
-                    </td>
+                    <td>Active</td>
                 </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center">No recent contracts available.</td>
+                {% endfor %}
+        
+                {% for contract in expiring_soon_contracts %}
+                <tr class="contract-row expiring-soon" style="display: none;">
+                    <td>{{ contract.staff_name }}</td>
+                    <td>{{ contract.title }}</td>
+                    <td>{{ contract.contract_type }}</td>
+                    <td>{{ contract.expiration_date }}</td>
+                    <td>Expiring Soon</td>
+                </tr>
+                {% endfor %}
+        
+                {% for contract in expired_contracts %}
+                <tr class="contract-row expired" style="display: none;">
+                    <td>{{ contract.staff_name }}</td>
+                    <td>{{ contract.title }}</td>
+                    <td>{{ contract.contract_type }}</td>
+                    <td>{{ contract.expiration_date }}</td>
+                    <td>Expired</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        
+        <!-- JavaScript to Toggle Contracts -->
+        <script>
+        document.getElementById("active-btn").addEventListener("click", function() {
+            showContracts("active");
+        });
+        document.getElementById("expiring-btn").addEventListener("click", function() {
+            showContracts("expiring-soon");
+        });
+        document.getElementById("expired-btn").addEventListener("click", function() {
+            showContracts("expired");
+        });
+        
+        function showContracts(status) {
+            document.querySelectorAll(".contract-row").forEach(row => row.style.display = "none");
+            document.querySelectorAll("." + status).forEach(row => row.style.display = "table-row");
+        }
+        </script>          

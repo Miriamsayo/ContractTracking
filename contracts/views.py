@@ -15,23 +15,39 @@ from django.contrib.auth import get_user_model
 from contracts.models import Contract, Unit
 from .serializers import ContractSerializer
 from .forms import CustomUserCreationForm, ContractForm
+from datetime import date, timedelta
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+
 @login_required
 def dashboard(request):
-    return render(request, "contracts/dashboard.html")
+    """Dashboard displaying contract statistics"""
+    today = date.today()
+    expiring_soon_threshold = today + timedelta(days=30)
+
+    active_contracts = Contract.objects.filter(end_date__gte=today)
+    expiring_soon_contracts = Contract.objects.filter(end_date__gte=today, end_date__lte=expiring_soon_threshold)
+    expired_contracts = Contract.objects.filter(end_date__lt=today)
+
+    context = {
+        'active_contracts': active_contracts,
+        'expiring_soon_contracts': expiring_soon_contracts,
+        'expired_contracts': expired_contracts
+    }
+    return render(request, "contracts/dashboard.html", context)
 
 
 @login_required
 def user_list(request):
+    """List all users"""
     users = User.objects.all()
     return render(request, "contracts/user/user_list.html", {"users": users})
 
 
 @login_required
-def contract_list(request, status=None):
+def contract_list(request):
     """Display contracts based on user role and filter status"""
     user = request.user
     today = now().date()
@@ -45,15 +61,16 @@ def contract_list(request, status=None):
     else:
         contracts = Contract.objects.none()
 
-    # Apply filtering based on status
-    if status == "active":
-        contracts = contracts.filter(expiration_date__gt=today)
-    elif status == "expiring":
-        contracts = contracts.filter(expiration_date__range=[today, today + datetime.timedelta(days=30)])
-    elif status == "expired":
-        contracts = contracts.filter(expiration_date__lt=today)
+    status_filter = request.GET.get("status")
+    
+    if status_filter == "active":
+        contracts = contracts.filter(end_date__gt=today)
+    elif status_filter == "expiring":
+        contracts = contracts.filter(end_date__range=[today, today + timedelta(days=30)])
+    elif status_filter == "expired":
+        contracts = contracts.filter(end_date__lt=today)
 
-    return render(request, "contracts/contract_list.html", {"contracts": contracts, "status": status})
+    return render(request, "contracts/contract_list.html", {"contracts": contracts, "status": status_filter})
 
 
 @login_required
@@ -85,7 +102,7 @@ def contract_create(request):
         form = ContractForm(request.POST, request.FILES)
         if form.is_valid():
             contract = form.save(commit=False)
-            
+
             if not contract.staff_name:
                 messages.error(request, "You must select a staff name before creating a contract.")
                 return render(request, "contracts/contract_form.html", {"form": form})
@@ -97,7 +114,7 @@ def contract_create(request):
         else:
             messages.error(request, "Error creating contract.")
     else:
-        form = ContractForm()  
+        form = ContractForm()
 
     return render(request, "contracts/contract_form.html", {"form": form})
 
@@ -113,15 +130,15 @@ def contract_detail(request, pk):
 def delete_contract(request, pk):
     """Allow only Admins and Supervisors to delete contracts"""
     contract = get_object_or_404(Contract, pk=pk)
-    
+
     if request.user.role not in ["Admin", "Supervisor"]:
         raise PermissionDenied
-    
+
     if request.method == "POST":
         contract.delete()
         messages.success(request, "Contract deleted successfully.")
         return redirect("contract_list")
-    
+
     return render(request, "contracts/contract_confirm_delete.html", {"contract": contract})
 
 
@@ -140,16 +157,18 @@ def login_view(request):
         password = request.POST.get("password")
         user = authenticate(request, username=username, password=password)
 
-        if user:
-            login(request, user)
-            return redirect("dashboard")
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                return redirect("dashboard")
+            else:
+                messages.error(request, "Your account is inactive. Contact the administrator.")
         else:
             messages.error(request, "Invalid username or password.")
-    
+
     return render(request, "contracts/login.html")
 
 
-@login_required
 def logout_view(request):
     """User logout view"""
     logout(request)
@@ -219,18 +238,14 @@ class ContractViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def notify_expiring_contracts(self, request):
-        """Send notifications for contracts expiring in 2 months, 1 month, or 1 day"""
+        """Send notifications for contracts expiring soon"""
         today = now().date()
         expiring_contracts = Contract.objects.filter(
-            expiration_date__in=[
-                today + datetime.timedelta(days=60),
-                today + datetime.timedelta(days=30),
-                today + datetime.timedelta(days=1),
-            ]
+            end_date__in=[today + timedelta(days=60), today + timedelta(days=30), today + timedelta(days=1)]
         )
 
         for contract in expiring_contracts:
-            days_remaining = (contract.expiration_date - today).days
+            days_remaining = (contract.end_date - today).days
 
             send_notification_email(
                 "Contract Expiration Reminder",
