@@ -83,7 +83,7 @@
                     <th>Staff Name</th>
                     <th>Title</th>
                     <th>Contract Type</th>
-                    <th>Expiration Date</th>
+                    <th>end_date</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -93,8 +93,12 @@
                     <td>{{ contract.staff_name }}</td>
                     <td>{{ contract.title }}</td>
                     <td>{{ contract.contract_type }}</td>
-                    <td>{{ contract.expiration_date }}</td>
+                    <td>{{ contract.end_date }}</td>
                     <td>Active</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No active contracts found.</td>
                 </tr>
                 {% endfor %}
         
@@ -103,18 +107,26 @@
                     <td>{{ contract.staff_name }}</td>
                     <td>{{ contract.title }}</td>
                     <td>{{ contract.contract_type }}</td>
-                    <td>{{ contract.expiration_date }}</td>
+                    <td>{{ contract.end_date }}</td>
                     <td>Expiring Soon</td>
                 </tr>
-                {% endfor %}
+                {% empty %}
+            </tr>
+                <td colspan="5">No expiring contracts.</td>
+        </tr>
+        {% endfor %}
         
                 {% for contract in expired_contracts %}
                 <tr class="contract-row expired" style="display: none;">
                     <td>{{ contract.staff_name }}</td>
                     <td>{{ contract.title }}</td>
                     <td>{{ contract.contract_type }}</td>
-                    <td>{{ contract.expiration_date }}</td>
+                    <td>{{ contract.end_date }}</td>
                     <td>Expired</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No expired contracts.</td>
                 </tr>
                 {% endfor %}
             </tbody>

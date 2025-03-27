@@ -121,6 +121,10 @@ TIME_ZONE = "Africa/Nairobi"  # Adjust based on your region
 USE_I18N = True
 USE_TZ = True
 
+SIGNUP_URL = "/signup/"  
+
+LOGIN_URL = "/login/"
+
 # Static Files
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]

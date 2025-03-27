@@ -37,8 +37,9 @@ class ContractForm(forms.ModelForm):
 
 
 class CustomUserCreationForm(UserCreationForm):
+    role = forms.CharField( required=False, widget=forms.HiddenInput(), initial="User" )
     class Meta:
-        model = User
+        model = CustomUser
         fields = ["username", "email", "password1", "password2", "role", "unit", "supervisor"]
 
     def clean_email(self):
