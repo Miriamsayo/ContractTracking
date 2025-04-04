@@ -29,14 +29,20 @@ def dashboard(request):
     
     if not request.user.is_authenticated:
         return redirect("login")
+        
     print(f"Logged-in user: {request.user}")
     
-    user_contracts= Contract.objects.filter(employee=request.user)
-    print(f"Contracts for {request.user}: {list(user_contracts)}")
+    if request.user.is_staff or request.user.is_superuser:
+        contracts = Contract.objects.all()
+    else:
+        contracts = Contract.objects.filter(employee=request.user)    
+    
 
-    active_contracts = Contract.objects.filter(end_date__gte=today)
-    expiring_soon_contracts = Contract.objects.filter(end_date__gte=today, end_date__lte=expiring_soon_threshold)
-    expired_contracts = Contract.objects.filter(end_date__lt=today)
+    print(f"Contracts for {request.user}: {list(contracts)}")
+
+    active_contracts = contracts.filter(end_date__gte=today)
+    expiring_soon_contracts = contracts.filter(end_date__gte=today, end_date__lte=expiring_soon_threshold)
+    expired_contracts = contracts.filter(end_date__lt=today)
 
     context = {
         'active_contracts': active_contracts,
